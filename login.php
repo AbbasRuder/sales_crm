@@ -1,34 +1,20 @@
 <?php
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
-
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "salescrm";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+include("config.php");
 
 // Get POST data
 $email = $_POST["email"];
-$password = $_POST["password"];
+$password = mysqli_real_escape_string($conn, $_POST["password"]);
 
 
 // Query the database
-$sql = "SELECT * FROM users WHERE email = '$email' AND password = '$password'";
+$sql = "SELECT * FROM users WHERE `email` = '$email' AND BINARY `password` = '$password'";
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {
-    echo json_encode(array("success" => true, "message" => "Login successful.", "email" => $email, "password" => $password ));
+    $userDetails = $result->fetch_assoc();
+    echo json_encode(array("success" => true, "message" => "Login successful.", 'result' => $userDetails ));
 } else {
-    echo json_encode(array("success" => false, "message" => "Invalid email or password.", "email" => $email, "password" => $password ));
+    echo json_encode(array("success" => false, "message" => "Invalid email or password."));
 }
 
 $conn->close();

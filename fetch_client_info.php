@@ -1,22 +1,9 @@
 <?php
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
-
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "salescrm";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+include("config.php");
 
 $userID = $_POST["id"];
 
+// Query sales_info table to get client IDs associated with the user
 $salesQuery = "SELECT DISTINCT client_id FROM sales_info WHERE assigned_to = '$userID'";
 $salesResult = $conn->query($salesQuery);
 
@@ -28,6 +15,8 @@ if ($salesResult->num_rows > 0) {
     }
 
     $clientIDsString = implode(",", $clientIDs);
+
+    // Query client_info table to get client details
     $clientDetailsQuery = "SELECT * FROM client_info WHERE id IN ($clientIDsString)";
     $clientDetailsResult = $conn->query($clientDetailsQuery);
 
@@ -35,6 +24,18 @@ if ($salesResult->num_rows > 0) {
 
     if ($clientDetailsResult->num_rows > 0) {
         while ($row = $clientDetailsResult->fetch_assoc()) {
+            // Retrieve additional columns from sales_info for each client
+            $clientID = $row["id"];
+            $salesInfoQuery = "SELECT status, response, remark FROM sales_info WHERE client_id = '$clientID' AND assigned_to = '$userID'";
+            $salesInfoResult = $conn->query($salesInfoQuery);
+
+            if ($salesInfoResult->num_rows > 0) {
+                $salesInfoRow = $salesInfoResult->fetch_assoc();
+                $row["status"] = $salesInfoRow["status"];
+                // $row["response"] = $salesInfoRow["response"];
+                // $row["remark"] = $salesInfoRow["remark"];
+            }
+
             $clientDetails[] = $row;
         }
     }
